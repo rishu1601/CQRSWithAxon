@@ -6,6 +6,7 @@ import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.spring.stereotype.Aggregate;
 import org.learn.rechargedays.estore.orderservice.core.data.OrderStatus;
+import org.learn.rechargedays.estore.orderservice.core.events.OrderApprovedEvent;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderCreatedEvent;
 import org.springframework.beans.BeanUtils;
 
@@ -35,6 +36,7 @@ public class OrderAggregate {
         AggregateLifecycle.apply(orderCreatedEvent);
     }
 
+
     @EventSourcingHandler
     public void on(OrderCreatedEvent orderCreatedEvent) {
         this.orderId = orderCreatedEvent.getOrderId();
@@ -43,5 +45,17 @@ public class OrderAggregate {
         this.quantity = orderCreatedEvent.getQuantity();
         this.addressId = orderCreatedEvent.getAddressId();
         this.orderStatus = orderCreatedEvent.getOrderStatus();
+    }
+
+
+    @CommandHandler
+    public void handle(ApproveOrderCommand approveOrderCommand) {
+        OrderApprovedEvent orderApprovedEvent = new OrderApprovedEvent(approveOrderCommand.getOrderId());
+        AggregateLifecycle.apply(orderApprovedEvent);
+    }
+
+    @EventSourcingHandler
+    public void on(OrderApprovedEvent orderApprovedEvent) {
+        this.orderStatus = orderApprovedEvent.getOrderStatus();
     }
 }

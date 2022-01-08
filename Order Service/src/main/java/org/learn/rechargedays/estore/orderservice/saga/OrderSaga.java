@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.messaging.responsetypes.ResponseTypes;
+import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.queryhandling.QueryGateway;
@@ -11,8 +12,11 @@ import org.axonframework.spring.stereotype.Saga;
 import org.learn.rechargedays.estore.core.commands.ProcessPaymentCommand;
 import org.learn.rechargedays.estore.core.commands.ReserveProductCommand;
 import org.learn.rechargedays.estore.core.data.UserDetails;
+import org.learn.rechargedays.estore.core.events.PaymentProcessedEvent;
 import org.learn.rechargedays.estore.core.events.ProductReservedEvent;
 import org.learn.rechargedays.estore.core.query.FetchUserPaymentDetailsQuery;
+import org.learn.rechargedays.estore.orderservice.command.ApproveOrderCommand;
+import org.learn.rechargedays.estore.orderservice.core.events.OrderApprovedEvent;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderCreatedEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -78,9 +82,19 @@ public class OrderSaga {
         if(result == null) {
             //Compensating Transaction
         }
+    }
 
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(PaymentProcessedEvent paymentProcessedEvent) {
+        ApproveOrderCommand approveOrderCommand =
+                new ApproveOrderCommand(paymentProcessedEvent.getOrderId());
+        commandGateway.send(approveOrderCommand);
+    }
 
-
+    @EndSaga
+    @SagaEventHandler(associationProperty = "orderId")
+    public void handle(OrderApprovedEvent orderApprovedEvent) {
+        log.info("Order has been approved, orderId:{}", orderApprovedEvent.getOrderId());
     }
 
 
