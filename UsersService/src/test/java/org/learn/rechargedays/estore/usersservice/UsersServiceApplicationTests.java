@@ -1,10 +1,10 @@
-package org.leaern.rechargedays.estore.discoveryserver;
+package org.learn.rechargedays.estore.usersservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class DiscoveryServerApplicationTests {
+class UsersServiceApplicationTests {
 
     @Test
     void contextLoads() {
