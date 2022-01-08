@@ -6,6 +6,8 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.spring.stereotype.Aggregate;
+import org.learn.rechargedays.estore.core.commands.ReserveProductCommand;
+import org.learn.rechargedays.estore.core.events.ProductReservedEvent;
 import org.learn.rechargedays.estore.productservice.core.events.ProductCreatedEvent;
 import org.springframework.beans.BeanUtils;
 
@@ -48,5 +50,27 @@ public class ProductAggregate {
         this.price = productCreatedEvent.getPrice();
         this.quantity = productCreatedEvent.getQuantity();
         this.title = productCreatedEvent.getTitle();
+    }
+
+    @CommandHandler
+    public void on(ReserveProductCommand reserveProductCommand) {
+        //quantity is fetched from axon state object
+        if(quantity < reserveProductCommand.getQuantity()) {
+            throw new IllegalStateException("Insufficient items in stock");
+        }
+
+        ProductReservedEvent productReservedEvent = ProductReservedEvent.builder()
+                .productId(reserveProductCommand.getProductId())
+                .quantity(reserveProductCommand.getQuantity())
+                .orderId(reserveProductCommand.getOrderId())
+                .userId(reserveProductCommand.getUserId())
+                .build();
+
+        AggregateLifecycle.apply(productReservedEvent);
+    }
+
+    @EventSourcingHandler
+    public void on(ProductReservedEvent productReservedEvent) {
+        this.quantity -= productReservedEvent.getQuantity();
     }
 }
