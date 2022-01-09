@@ -8,6 +8,7 @@ import org.axonframework.spring.stereotype.Aggregate;
 import org.learn.rechargedays.estore.orderservice.core.data.OrderStatus;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderApprovedEvent;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderCreatedEvent;
+import org.learn.rechargedays.estore.orderservice.core.events.OrderRejectedEvent;
 import org.springframework.beans.BeanUtils;
 
 @Aggregate
@@ -57,5 +58,17 @@ public class OrderAggregate {
     @EventSourcingHandler
     public void on(OrderApprovedEvent orderApprovedEvent) {
         this.orderStatus = orderApprovedEvent.getOrderStatus();
+    }
+
+    @CommandHandler
+    public void handle(RejectOrderCommand rejectOrderCommand) {
+        OrderRejectedEvent orderRejectEvent = new OrderRejectedEvent(rejectOrderCommand.getOrderId(),
+                                                                     rejectOrderCommand.getReason());
+        AggregateLifecycle.apply(orderRejectEvent);
+    }
+
+    @EventSourcingHandler
+    public void on(OrderRejectedEvent orderRejectedEvent) {
+        this.orderStatus = orderRejectedEvent.getOrderStatus();
     }
 }

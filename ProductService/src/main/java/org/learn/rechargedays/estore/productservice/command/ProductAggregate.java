@@ -6,7 +6,9 @@ import org.axonframework.eventsourcing.EventSourcingHandler;
 import org.axonframework.modelling.command.AggregateIdentifier;
 import org.axonframework.modelling.command.AggregateLifecycle;
 import org.axonframework.spring.stereotype.Aggregate;
+import org.learn.rechargedays.estore.core.commands.CancelProductReservationCommand;
 import org.learn.rechargedays.estore.core.commands.ReserveProductCommand;
+import org.learn.rechargedays.estore.core.events.ProductReservationCancelEvent;
 import org.learn.rechargedays.estore.core.events.ProductReservedEvent;
 import org.learn.rechargedays.estore.productservice.core.events.ProductCreatedEvent;
 import org.springframework.beans.BeanUtils;
@@ -55,7 +57,7 @@ public class ProductAggregate {
     @CommandHandler
     public void on(ReserveProductCommand reserveProductCommand) {
         //quantity is fetched from axon state object
-        if(quantity < reserveProductCommand.getQuantity()) {
+        if (quantity < reserveProductCommand.getQuantity()) {
             throw new IllegalStateException("Insufficient items in stock");
         }
 
@@ -72,5 +74,22 @@ public class ProductAggregate {
     @EventSourcingHandler
     public void on(ProductReservedEvent productReservedEvent) {
         this.quantity -= productReservedEvent.getQuantity();
+    }
+
+    @CommandHandler
+    public void on(CancelProductReservationCommand command) {
+        ProductReservationCancelEvent productReservationCancelEvent = ProductReservationCancelEvent.builder()
+                .orderId(command.getOrderId())
+                .productId(command.getProductId())
+                .userId(command.getUserId())
+                .quantity(command.getQuantity())
+                .reason(command.getReason())
+                .build();
+        AggregateLifecycle.apply(productReservationCancelEvent);
+    }
+
+    @EventSourcingHandler
+    public void handle(ProductReservationCancelEvent productReservationCancelEvent) {
+        this.quantity += productReservationCancelEvent.getQuantity();
     }
 }

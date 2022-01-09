@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.axonframework.config.ProcessingGroup;
 import org.axonframework.eventhandling.EventHandler;
 import org.axonframework.messaging.interceptors.ExceptionHandler;
+import org.learn.rechargedays.estore.core.events.ProductReservationCancelEvent;
 import org.learn.rechargedays.estore.core.events.ProductReservedEvent;
 import org.learn.rechargedays.estore.productservice.core.data.ProductEntity;
 import org.learn.rechargedays.estore.productservice.core.data.ProductRepository;
@@ -40,6 +41,13 @@ public class ProductEventsHandler {
         log.info("Processing ProductReservedEvent:{}", productReservedEvent);
         ProductEntity product = productRepository.findByProductId(productReservedEvent.getProductId());
         product.setQuantity(productReservedEvent.getQuantity());
+        productRepository.save(product);
+    }
+
+    @EventHandler
+    public void on(ProductReservationCancelEvent productReservationCancelEvent) {
+        ProductEntity product = productRepository.findByProductId(productReservationCancelEvent.getProductId());
+        product.setQuantity(productReservationCancelEvent.getQuantity() + product.getQuantity());
         productRepository.save(product);
     }
 }
