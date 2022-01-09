@@ -1,5 +1,6 @@
 package org.learn.rechargedays.estore.orderservice.saga;
 
+import io.netty.util.internal.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -8,6 +9,7 @@ import org.axonframework.modelling.saga.EndSaga;
 import org.axonframework.modelling.saga.SagaEventHandler;
 import org.axonframework.modelling.saga.StartSaga;
 import org.axonframework.queryhandling.QueryGateway;
+import org.axonframework.queryhandling.QueryUpdateEmitter;
 import org.axonframework.spring.stereotype.Saga;
 import org.learn.rechargedays.estore.core.commands.CancelProductReservationCommand;
 import org.learn.rechargedays.estore.core.commands.ProcessPaymentCommand;
@@ -19,9 +21,11 @@ import org.learn.rechargedays.estore.core.events.ProductReservedEvent;
 import org.learn.rechargedays.estore.core.query.FetchUserPaymentDetailsQuery;
 import org.learn.rechargedays.estore.orderservice.command.ApproveOrderCommand;
 import org.learn.rechargedays.estore.orderservice.command.RejectOrderCommand;
+import org.learn.rechargedays.estore.orderservice.core.data.OrderSummary;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderApprovedEvent;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderCreatedEvent;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderRejectedEvent;
+import org.learn.rechargedays.estore.orderservice.query.FindOrderQuery;
 
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +37,7 @@ public class OrderSaga {
 
     private final CommandGateway commandGateway;
     private final QueryGateway queryGateway;
+    private final QueryUpdateEmitter queryUpdateEmitter;
 
     @StartSaga
     @SagaEventHandler(associationProperty = "orderId")
@@ -99,6 +104,9 @@ public class OrderSaga {
     @SagaEventHandler(associationProperty = "orderId")
     public void handle(OrderApprovedEvent orderApprovedEvent) {
         log.info("Order has been approved, orderId:{}", orderApprovedEvent.getOrderId());
+        queryUpdateEmitter.emit(FindOrderQuery.class, query -> true,
+                                new OrderSummary(orderApprovedEvent.getOrderId(), orderApprovedEvent.getOrderStatus()
+                                        , ""));
     }
 
     @SagaEventHandler(associationProperty = "orderId")
@@ -111,7 +119,10 @@ public class OrderSaga {
     @EndSaga
     @SagaEventHandler(associationProperty = "orderId")
     public void handle(OrderRejectedEvent orderRejectedEvent) {
-
+        queryUpdateEmitter.emit(FindOrderQuery.class, query -> true,
+                                new OrderSummary(orderRejectedEvent.getOrderId(),
+                                                 orderRejectedEvent.getOrderStatus(),
+                                                 orderRejectedEvent.getReason()));
     }
 
 
