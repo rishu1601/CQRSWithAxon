@@ -7,6 +7,7 @@ import org.learn.rechargedays.estore.orderservice.core.data.OrderEntity;
 import org.learn.rechargedays.estore.orderservice.core.data.OrderRepository;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderApprovedEvent;
 import org.learn.rechargedays.estore.orderservice.core.events.OrderCreatedEvent;
+import org.learn.rechargedays.estore.orderservice.core.events.OrderRejectedEvent;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -32,6 +33,17 @@ public class OrderEventsHandler {
             return;
         }
         orderEntity.setOrderStatus(orderApprovedEvent.getOrderStatus());
+        orderRepository.save(orderEntity);
+    }
+
+    @EventHandler
+    public void on(OrderRejectedEvent orderRejectedEvent) {
+        OrderEntity orderEntity = orderRepository.findByOrderId(orderRejectedEvent.getOrderId());
+        if(orderEntity == null) {
+            //Compensate flow
+            return;
+        }
+        orderEntity.setOrderStatus(orderRejectedEvent.getOrderStatus());
         orderRepository.save(orderEntity);
     }
 }
